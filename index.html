@@ -222,6 +222,8 @@
             themeToggle.addEventListener('click', toggleTheme);
             timeInputs.forEach(input => input.addEventListener('change', calculateWorkedTime));
             startTaskBtn.addEventListener('click', startTask);
+
+            startWorkedMinutesUpdater();
         }
 
         // Alternar tema
@@ -476,13 +478,23 @@
                 const task = activeTasks.find(t => t.id === taskId);
                 const elapsedElement = taskElement.querySelector('.task-time');
                 if (elapsedElement) {
-                    const minutes = Math.floor(task.elapsedMinutes);
-                    const seconds = Math.floor((task.elapsedMinutes % 1) * 60);
-                    elapsedElement.textContent = minutes > 0 ?
-                        `${minutes} min ${seconds} s` :
-                        `${seconds} s`;
+                    const minutos = Math.floor(task.elapsedMinutes);
+                    elapsedElement.textContent = `${minutos} min`;
                 }
             }
+        }
+
+        function startWorkedMinutesUpdater() {
+            let lastUpdate = 0;
+
+            function update(timestamp) {
+                if (timestamp - lastUpdate >= 1000) { // 1000 ms = 1 seg
+                    calculateWorkedTime();
+                    lastUpdate = timestamp;
+                }
+                requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
         }
 
         function updateTaskTime() {
@@ -583,23 +595,23 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-medium text-slate-600 dark:text-slate-400">${task.name}</span>
                         <span class="task-time font-bold">
-                            ${Math.floor((new Date() - new Date(task.startTime)) / 60000) + task.manualAdjustment} min
+                            ${Math.floor(task.elapsedMinutes)} min
                         </span>
                     </div>
                     <div class="flex space-x-2">
-                        <button onclick="adjustTaskTime('${task.id}', -1)" class="px-2 py-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 rounded text-sm text-slate-700 dark:text-slate-300">
-                            -1 min
-                        </button>
-                        <button onclick="adjustTaskTime('${task.id}', 1)" class="px-2 py-1 bg-slate-100 dark:bg-slate-600 rounded text-sm">
-                            +1 min
-                        </button>
-                        <button onclick="completeTask('${task.id}')" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">
-                            Concluir
-                        </button>
+                        <div class="flex space-x-2 items-center">
+                            <input type="number" min="0" class="w-20 px-2 py-1 border rounded text-center text-slate-700 dark:text-slate-300 dark:bg-slate-700" 
+                                value="${task.elapsedMinutes}" 
+                                onchange="setTaskTime('${task.id}', this.value)">
+                            <button onclick="completeTask('${task.id}')" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">
+                                Concluir
+                            </button>
+                        </div>
                     </div>
                 `;
 
                 activeTasksList.appendChild(li);
+                startTaskTimer(task.id);
             });
 
             // Tarefas completadas
@@ -626,6 +638,25 @@
                 completedTasksList.appendChild(li);
             });
             atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
+        }
+
+        function setTaskTime(taskId, newValue) {
+            const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+            if (taskIndex >= 0) {
+                const parsedValue = parseInt(newValue, 10);
+                if (!isNaN(parsedValue) && parsedValue >= 0) {
+                    const now = new Date();
+                    const timeDiff = Math.floor((now - new Date(activeTasks[taskIndex].startTime)) / 60000);
+
+                    // Ajustar manualAdjustment de forma que elapsedMinutes = timeDiff + manualAdjustment
+                    activeTasks[taskIndex].manualAdjustment = parsedValue - timeDiff;
+                    activeTasks[taskIndex].elapsedMinutes = parsedValue;
+
+                    localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+                    updateTaskDisplay(taskId); // para atualizar o campo "x min"
+                    atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
+                }
+            }
         }
 
         // Ajustar tempo manualmente
