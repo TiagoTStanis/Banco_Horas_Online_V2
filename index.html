@@ -316,7 +316,7 @@
                 balanceAlert.textContent = `⚠️ As tarefas registradas somam ${totalTaskMinutes} min, que excedem os ${minutosHoje} min trabalhados hoje.`;
                 balanceAlert.className = "text-yellow-600 dark:text-yellow-400";
             } else if (totalTaskMinutes < minutosHoje) {
-                balanceAlert.textContent = `🔎 As tarefas somam ${totalTaskMinutes} min de ${minutosHoje} min trabalhados.`;
+                balanceAlert.textContent = `🔎 As tarefas somam ${totalTaskMinutes.toFixed(1)} min de ${minutosHoje} min trabalhados.`;
                 balanceAlert.className = "text-blue-600 dark:text-blue-400";
             } else {
                 balanceAlert.textContent = `✅ O tempo das tarefas bate com o total trabalhado (${minutosHoje} min).`;
