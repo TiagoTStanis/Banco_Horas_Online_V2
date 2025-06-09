@@ -168,6 +168,31 @@
                         <span>Alternar Tema</span>
                     </button>
                 </div>
+
+                <div class="mt-8 p-4 bg-slate-100 dark:bg-slate-900 rounded-lg shadow space-y-2">
+                    <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">Calculadora de Fechamento
+                    </h3>
+
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <label>Início Manhã</label>
+                            <input type="time" id="calc-morning-start" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                        </div>
+                        <div>
+                            <label>Fim Manhã</label>
+                            <input type="time" id="calc-morning-end" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                        </div>
+                        <div>
+                            <label>Início Tarde</label>
+                            <input type="time" id="calc-afternoon-start" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                        </div>
+                        <div>
+                            <label>Fim Tarde</label>
+                            <input type="time" id="calc-afternoon-end" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                        </div>
+                    </div>
+                    <div id="fechamento-alert" class="text-sm font-medium mt-2"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -414,7 +439,7 @@
         // Iniciar timer para uma tarefa
         function startTaskTimer(taskId) {
             if (timeIntervals[taskId]) return;
-        
+
             const taskIndex = activeTasks.findIndex(t => t.id === taskId);
             if (taskIndex >= 0) {
                 // Se ainda não existe lastUpdateTime na task, inicializa com o timestamp atual
@@ -422,25 +447,25 @@
                     activeTasks[taskIndex].lastUpdateTime = Date.now();
                 }
             }
-        
+
             const updateTaskTime = () => {
                 const now = Date.now();
                 const isWorkingHours = isInWorkingHours();
-        
+
                 if (isWorkingHours) {
                     const taskIndex = activeTasks.findIndex(t => t.id === taskId);
                     if (taskIndex >= 0) {
                         // Calcula o tempo decorrido desde a última atualização
                         const diffMinutes = (now - activeTasks[taskIndex].lastUpdateTime) / 60000;
                         activeTasks[taskIndex].elapsedMinutes += diffMinutes;
-        
+
                         // Atualiza lastUpdateTime para o timestamp atual
                         activeTasks[taskIndex].lastUpdateTime = now;
-        
+
                         // Atualiza o display da tarefa
                         updateTaskDisplay(taskId);
                         localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
-        
+
                         // Atualiza o task-balance-alert também!
                         atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
                     }
@@ -450,7 +475,7 @@
                     if (taskIndex >= 0) {
                         activeTasks[taskIndex].lastUpdateTime = now;
                     }
-        
+
                     // Pausa o contador se não estiver em horário de trabalho
                     if (timeIntervals[taskId]) {
                         cancelAnimationFrame(timeIntervals[taskId]);
@@ -458,10 +483,10 @@
                     }
                 }
             };
-        
+
             // Update immediately
             updateTaskTime();
-        
+
             // Configura o intervalo para atualização em tempo real (60fps)
             timeIntervals[taskId] = requestAnimationFrame(function update() {
                 updateTaskTime();
@@ -620,7 +645,7 @@
                     <div class="flex space-x-2">
                         <div class="flex space-x-2 items-center">
                             <input type="number" min="0" class="w-20 px-2 py-1 border rounded text-center text-slate-700 dark:text-slate-300 dark:bg-slate-700" 
-                                value="${Math.floor(task.elapsedMinutes)}" 
+                                value="${task.elapsedMinutes}" 
                                 onchange="setTaskTime('${task.id}', this.value)">
                             <button onclick="completeTask('${task.id}')" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">
                                 Concluir
@@ -657,6 +682,7 @@
                 completedTasksList.appendChild(li);
             });
             atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
+            calcularFechamento();
         }
 
         function setTaskTime(taskId, newValue) {
@@ -726,6 +752,49 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
+
+        function calcularFechamento() {
+            const morningStart = document.getElementById('calc-morning-start').value;
+            const morningEnd = document.getElementById('calc-morning-end').value;
+            const afternoonStart = document.getElementById('calc-afternoon-start').value;
+            const afternoonEnd = document.getElementById('calc-afternoon-end').value;
+
+            const [msHours, msMinutes] = morningStart.split(':').map(Number);
+            const [meHours, meMinutes] = morningEnd.split(':').map(Number);
+            const [asHours, asMinutes] = afternoonStart.split(':').map(Number);
+            const [aeHours, aeMinutes] = afternoonEnd.split(':').map(Number);
+
+            const morningMinutes = (meHours * 60 + meMinutes) - (msHours * 60 + msMinutes);
+            const afternoonMinutes = (aeHours * 60 + aeMinutes) - (asHours * 60 + asMinutes);
+            const totalMinutosDevidos = morningMinutes + afternoonMinutes;
+
+            // Soma das tarefas do dia
+            const hoje = new Date().toISOString().split('T')[0];
+            const totalAtivas = activeTasks.reduce((sum, task) => sum + task.elapsedMinutes, 0);
+            const totalConcluidasHoje = completedTasks.reduce((sum, task) => {
+                const dataTarefa = task.completedAt.split('T')[0];
+                return dataTarefa === hoje ? sum + task.duration : sum;
+            }, 0);
+            const totalTaskMinutes = totalAtivas + totalConcluidasHoje;
+
+            // Percentual realizado
+            const percentual = (totalTaskMinutes / totalMinutosDevidos) * 100;
+
+            // Exibe o alerta
+            const alerta = document.getElementById('fechamento-alert');
+            alerta.textContent = `Total de minutos devidos: ${totalMinutosDevidos} min — Tarefas registradas: ${totalTaskMinutes.toFixed(0)} min (${percentual.toFixed(1)}%)`;
+
+            if (percentual >= 100) {
+                alerta.className = 'text-green-600 dark:text-green-400 mt-2';
+                alerta.textContent += ' — 🚀 Está fazendo hora extra!';
+            } else if (percentual >= 87.5) {
+                alerta.className = 'text-blue-600 dark:text-blue-400 mt-2';
+                alerta.textContent += ' — ✅ Fechamento OK.';
+            } else {
+                alerta.className = 'text-red-600 dark:text-red-400 mt-2';
+                alerta.textContent += ' — ⚠️ Faltam horas a declarar!';
+            }
+        }
     </script>
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 </body>
