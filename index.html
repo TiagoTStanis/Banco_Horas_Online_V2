@@ -414,25 +414,43 @@
         // Iniciar timer para uma tarefa
         function startTaskTimer(taskId) {
             if (timeIntervals[taskId]) return;
-
+        
+            const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+            if (taskIndex >= 0) {
+                // Se ainda não existe lastUpdateTime na task, inicializa com o timestamp atual
+                if (!activeTasks[taskIndex].lastUpdateTime) {
+                    activeTasks[taskIndex].lastUpdateTime = Date.now();
+                }
+            }
+        
             const updateTaskTime = () => {
-                const now = new Date();
+                const now = Date.now();
                 const isWorkingHours = isInWorkingHours();
-
+        
                 if (isWorkingHours) {
                     const taskIndex = activeTasks.findIndex(t => t.id === taskId);
                     if (taskIndex >= 0) {
-                        const timeDiff = Math.floor((now - new Date(activeTasks[taskIndex].startTime)) / 60000);
-                        activeTasks[taskIndex].elapsedMinutes = timeDiff + activeTasks[taskIndex].manualAdjustment;
-
+                        // Calcula o tempo decorrido desde a última atualização
+                        const diffMinutes = (now - activeTasks[taskIndex].lastUpdateTime) / 60000;
+                        activeTasks[taskIndex].elapsedMinutes += diffMinutes;
+        
+                        // Atualiza lastUpdateTime para o timestamp atual
+                        activeTasks[taskIndex].lastUpdateTime = now;
+        
                         // Atualiza o display da tarefa
                         updateTaskDisplay(taskId);
                         localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
-
+        
                         // Atualiza o task-balance-alert também!
                         atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
                     }
                 } else {
+                    // Se saiu do horário de trabalho, atualiza lastUpdateTime para evitar contagem errada ao voltar
+                    const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+                    if (taskIndex >= 0) {
+                        activeTasks[taskIndex].lastUpdateTime = now;
+                    }
+        
                     // Pausa o contador se não estiver em horário de trabalho
                     if (timeIntervals[taskId]) {
                         cancelAnimationFrame(timeIntervals[taskId]);
@@ -440,16 +458,17 @@
                     }
                 }
             };
-
+        
             // Update immediately
             updateTaskTime();
-
+        
             // Configura o intervalo para atualização em tempo real (60fps)
             timeIntervals[taskId] = requestAnimationFrame(function update() {
                 updateTaskTime();
                 timeIntervals[taskId] = requestAnimationFrame(update);
             });
         }
+
 
         function isInWorkingHours() {
             const now = new Date();
