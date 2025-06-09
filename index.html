@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Horas e Demandas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        purple: {
+                            light: '#c4b5fd',
+                            DEFAULT: '#8b5cf6',
+                            dark: '#7c3aed',
+                        },
+                        text: {
+                            light: '#475569',
+                            dark: '#e2e8f0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .time-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .dark .time-input {
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .task-item {
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 min-h-screen transition-all">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 text-blue-600 dark:text-blue-300">Gestão de Horas e
+            Demandas</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Configuração de Horários -->
+            <div class="md:col-span-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">Configuração de Horários</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Início Manhã -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium">Início da Manhã</label>
+                        <input type="time" id="morning-start"
+                            class="time-input w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="08:00">
+                    </div>
+
+                    <!-- Fim Manhã -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium">Fim da Manhã</label>
+                        <input type="time" id="morning-end"
+                            class="time-input w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="12:00">
+                    </div>
+
+                    <!-- Início Tarde -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium">Início da Tarde</label>
+                        <input type="time" id="afternoon-start"
+                            class="time-input w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="13:30">
+                    </div>
+
+                    <!-- Fim Tarde -->
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium">Fim da Tarde</label>
+                        <input type="time" id="afternoon-end"
+                            class="time-input w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="18:00">
+                    </div>
+                </div>
+
+                <hr class="my-4 border-slate-200 dark:border-slate-700">
+
+                <!-- Registro de Demandas -->
+                <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-300">Registro de Demandas</h2>
+
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome da
+                            Demanda</label>
+                        <input type="text" id="task-name"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                            placeholder="Digite o nome da demanda">
+                    </div>
+
+                    <button id="start-task"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition duration-200 ease-in-out">
+                        <i class="fas fa-plus mr-2"></i>Adicionar Demanda
+                    </button>
+
+                    <!-- Lista de Demandas Ativas -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-semibold mb-2 text-slate-700 dark:text-slate-300">Demandas Ativas</h3>
+                        <ul id="active-tasks-list" class="space-y-3">
+                            <!-- Active tasks will be added here -->
+                        </ul>
+                    </div>
+
+                    <!-- Lista de Demandas Finalizadas -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-semibold mb-2 text-slate-700 dark:text-slate-300">Histórico</h3>
+                        <ul id="completed-tasks-list" class="space-y-2">
+                            <!-- Completed tasks will be added here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cronômetro de Trabalho -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-300">Cronômetro de Trabalho</h2>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-100 dark:bg-slate-900 rounded-lg p 4">
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Minutos trabalhados hoje:</p>
+                        <p class="text-3xl font-bold" id="worked-minutes">0</p>
+                    </div>
+
+                    <div class="bg-slate-100 dark:bg-slate-900 rounded-lg p-4">
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Minutos restantes hoje:</p>
+                        <p class="text-3xl font-bold" id="remaining-minutes">480</p>
+                    </div>
+
+                    <div id="task-balance-alert" class="text-sm font-medium mt-2"></div>
+
+                    <div class="bg-amber-100 dark:bg-amber-900 dark:bg-opacity-30 rounded-lg p-4">
+                        <p class="text-sm text-slate-600 dark:text-amber-200 mb-1">Status atual:</p>
+                        <p class="text-lg font-bold text-blue-600 dark:text-blue-400" id="work-status">Fora do horário
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <button id="toggle-theme"
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm transition duration-200 flex items-center justify-center">
+                        <i class="fas fa-moon mr-2"></i>
+                        <span>Alternar Tema</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos DOM
+        const themeToggle = document.getElementById('toggle-theme');
+        const moonIcon = themeToggle.querySelector('.fa-moon');
+        const sunIcon = document.createElement('i');
+        sunIcon.className = 'fas fa-sun mr-2 hidden';
+        themeToggle.insertBefore(sunIcon, themeToggle.firstChild);
+
+        const timeInputs = document.querySelectorAll('input[type="time"]');
+        const workedMinutesEl = document.getElementById('worked-minutes');
+        const remainingMinutesEl = document.getElementById('remaining-minutes');
+        const workStatusEl = document.getElementById('work-status');
+        const startTaskBtn = document.getElementById('start-task');
+        const taskNameInput = document.getElementById('task-name');
+        const timeDiffEl = document.getElementById('time-diff');
+        const diffMinutesEl = document.getElementById('diff-minutes');
+        const diffPluralEl = document.getElementById('diff-plural');
+        const diffStatusEl = document.getElementById('diff-status');
+
+        // Variáveis de estado
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+        let activeTasks = JSON.parse(localStorage.getItem('activeTasks')) || [];
+        let completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || [];
+        let timeIntervals = {};
+
+        // Inicialização
+        function init() {
+            renderTasks();
+            updateTheme();
+
+            const savedWorkHours = JSON.parse(localStorage.getItem('workHours'));
+            if (savedWorkHours) {
+                document.getElementById('morning-start').value = savedWorkHours.morningStart;
+                document.getElementById('morning-end').value = savedWorkHours.morningEnd;
+                document.getElementById('afternoon-start').value = savedWorkHours.afternoonStart;
+                document.getElementById('afternoon-end').value = savedWorkHours.afternoonEnd;
+            } else {
+                // Se não houver horário salvo, define o padrão
+                document.getElementById('morning-start').value = `08:00`;
+                document.getElementById('morning-end').value = `12:00`;
+                document.getElementById('afternoon-start').value = `13:30`;
+                document.getElementById('afternoon-end').value = `17:30`;
+            }
+
+            calculateWorkedTime();
+
+            // Event listeners
+            themeToggle.addEventListener('click', toggleTheme);
+            timeInputs.forEach(input => input.addEventListener('change', calculateWorkedTime));
+            startTaskBtn.addEventListener('click', startTask);
+        }
+
+        // Alternar tema
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            updateTheme();
+        }
+
+        function updateTheme() {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+                themeToggle.querySelector('span').textContent = 'Modo Claro';
+            } else {
+                document.documentElement.classList.remove('dark');
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+                themeToggle.querySelector('span').textContent = 'Modo Escuro';
+            }
+        }
+
+        // Calcular tempo trabalhado
+        function calculateWorkedTime() {
+            const minutosHoje = calcularMinutosTrabalhadosHoje();
+            const capDia = capacidadeDia();
+            const minutosRestantes = Math.max(capDia - minutosHoje, 0);
+
+            workedMinutesEl.textContent = Math.min(minutosHoje, capDia);
+            remainingMinutesEl.textContent = minutosRestantes;
+
+            // Atualizar status
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const morningStart = document.getElementById('morning-start').value;
+            const morningEnd = document.getElementById('morning-end').value;
+            const afternoonStart = document.getElementById('afternoon-start').value;
+            const afternoonEnd = document.getElementById('afternoon-end').value;
+
+            const [msHours, msMinutes] = morningStart.split(':').map(Number);
+            const [meHours, meMinutes] = morningEnd.split(':').map(Number);
+            const [asHours, asMinutes] = afternoonStart.split(':').map(Number);
+            const [aeHours, aeMinutes] = afternoonEnd.split(':').map(Number);
+
+            const morningShift = currentMinutes >= (msHours * 60 + msMinutes) && currentMinutes < (meHours * 60 + meMinutes);
+            const afternoonShift = currentMinutes >= (asHours * 60 + asMinutes) && currentMinutes < (aeHours * 60 + aeMinutes);
+
+            if (morningShift) {
+                workStatusEl.textContent = 'Trabalhando (Manhã)';
+                workStatusEl.classList.remove('text-red-600', 'dark:text-red-400');
+                workStatusEl.classList.add('text-green-600', 'dark:text-green-400');
+            } else if (afternoonShift) {
+                workStatusEl.textContent = 'Trabalhando (Tarde)';
+                workStatusEl.classList.remove('text-red-600', 'dark:text-red-400');
+                workStatusEl.classList.add('text-green-600', 'dark:text-green-400');
+            } else {
+                workStatusEl.textContent = 'Fora do horário';
+                workStatusEl.classList.remove('text-green-600', 'dark:text-green-400');
+                workStatusEl.classList.add('text-red-600', 'dark:text-red-400');
+            }
+
+            // Chamada do novo helper
+            atualizarTaskBalance(minutosHoje);
+
+            // Salvar horário configurado
+            localStorage.setItem('workHours', JSON.stringify({
+                morningStart,
+                morningEnd,
+                afternoonStart,
+                afternoonEnd
+            }));
+        }
+
+        function atualizarTaskBalance(minutosHoje) {
+            const totalTaskMinutes = activeTasks.reduce((sum, task) => sum + task.elapsedMinutes, 0);
+            const balanceAlert = document.getElementById('task-balance-alert');
+
+            if (totalTaskMinutes > minutosHoje) {
+                balanceAlert.textContent = `⚠️ As tarefas registradas somam ${totalTaskMinutes} min, que excedem os ${minutosHoje} min trabalhados hoje.`;
+                balanceAlert.className = "text-yellow-600 dark:text-yellow-400";
+            } else if (totalTaskMinutes < minutosHoje) {
+                balanceAlert.textContent = `🔎 As tarefas somam ${totalTaskMinutes} min de ${minutosHoje} min trabalhados.`;
+                balanceAlert.className = "text-blue-600 dark:text-blue-400";
+            } else {
+                balanceAlert.textContent = `✅ O tempo das tarefas bate com o total trabalhado (${minutosHoje} min).`;
+                balanceAlert.className = "text-green-600 dark:text-green-400";
+            }
+        }
+
+
+        // Capacidade total do dia
+        function capacidadeDia() {
+            const morningStart = document.getElementById('morning-start').value;
+            const morningEnd = document.getElementById('morning-end').value;
+            const afternoonStart = document.getElementById('afternoon-start').value;
+            const afternoonEnd = document.getElementById('afternoon-end').value;
+
+            const [msHours, msMinutes] = morningStart.split(':').map(Number);
+            const [meHours, meMinutes] = morningEnd.split(':').map(Number);
+            const [asHours, asMinutes] = afternoonStart.split(':').map(Number);
+            const [aeHours, aeMinutes] = afternoonEnd.split(':').map(Number);
+
+            const morningMinutes = (meHours * 60 + meMinutes) - (msHours * 60 + msMinutes);
+            const afternoonMinutes = (aeHours * 60 + aeMinutes) - (asHours * 60 + asMinutes);
+
+            return morningMinutes + afternoonMinutes;
+        }
+
+        // Minutos trabalhados hoje
+        function calcularMinutosTrabalhadosHoje() {
+            const morningStart = document.getElementById('morning-start').value;
+            const morningEnd = document.getElementById('morning-end').value;
+            const afternoonStart = document.getElementById('afternoon-start').value;
+            const afternoonEnd = document.getElementById('afternoon-end').value;
+
+            const [msHours, msMinutes] = morningStart.split(':').map(Number);
+            const [meHours, meMinutes] = morningEnd.split(':').map(Number);
+            const [asHours, asMinutes] = afternoonStart.split(':').map(Number);
+            const [aeHours, aeMinutes] = afternoonEnd.split(':').map(Number);
+
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+
+            let totalWorked = 0;
+
+            // Manhã
+            if (currentTime >= (msHours * 60 + msMinutes)) {
+                if (currentTime < (meHours * 60 + meMinutes)) {
+                    totalWorked += currentTime - (msHours * 60 + msMinutes);
+                } else {
+                    totalWorked += (meHours * 60 + meMinutes) - (msHours * 60 + msMinutes);
+                }
+            }
+
+            // Tarde
+            if (currentTime >= (asHours * 60 + asMinutes)) {
+                if (currentTime < (aeHours * 60 + aeMinutes)) {
+                    totalWorked += currentTime - (asHours * 60 + asMinutes);
+                } else {
+                    totalWorked += (aeHours * 60 + aeMinutes) - (asHours * 60 + asMinutes);
+                }
+            }
+
+            return totalWorked;
+        }
+
+        // Adicionar nova demanda
+        function startTask() {
+            const taskName = taskNameInput.value.trim();
+            if (!taskName) {
+                showNotification('Por favor, insira um nome para a demanda.');
+                return;
+            }
+
+            const newTask = {
+                id: Date.now().toString(),
+                name: taskName,
+                startTime: new Date(),
+                elapsedMinutes: 0,
+                manualAdjustment: 0
+            };
+
+            activeTasks.push(newTask);
+            localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+
+            // Inicia o timer para esta tarefa
+            startTaskTimer(newTask.id);
+
+            // Renderiza as tarefas
+            renderTasks();
+
+            // Limpa o input
+            taskNameInput.value = '';
+
+            showNotification(`Demanda "${taskName}" adicionada com sucesso!`);
+        }
+
+        // Iniciar timer para uma tarefa
+        function startTaskTimer(taskId) {
+            if (timeIntervals[taskId]) return;
+
+            const updateTaskTime = () => {
+                const now = new Date();
+                const isWorkingHours = isInWorkingHours();
+
+                if (isWorkingHours) {
+                    const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+                    if (taskIndex >= 0) {
+                        const timeDiff = Math.floor((now - new Date(activeTasks[taskIndex].startTime)) / 60000);
+                        activeTasks[taskIndex].elapsedMinutes = timeDiff + activeTasks[taskIndex].manualAdjustment;
+
+                        // Atualiza o display da tarefa
+                        updateTaskDisplay(taskId);
+                        localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+
+                        // Atualiza o task-balance-alert também!
+                        atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
+                    }
+                } else {
+                    // Pausa o contador se não estiver em horário de trabalho
+                    if (timeIntervals[taskId]) {
+                        cancelAnimationFrame(timeIntervals[taskId]);
+                        delete timeIntervals[taskId];
+                    }
+                }
+            };
+
+            // Update immediately
+            updateTaskTime();
+
+            // Configura o intervalo para atualização em tempo real (60fps)
+            timeIntervals[taskId] = requestAnimationFrame(function update() {
+                updateTaskTime();
+                timeIntervals[taskId] = requestAnimationFrame(update);
+            });
+        }
+
+        function isInWorkingHours() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const morningStart = document.getElementById('morning-start').value;
+            const morningEnd = document.getElementById('morning-end').value;
+            const afternoonStart = document.getElementById('afternoon-start').value;
+            const afternoonEnd = document.getElementById('afternoon-end').value;
+
+            const [msHours, msMinutes] = morningStart.split(':').map(Number);
+            const [meHours, meMinutes] = morningEnd.split(':').map(Number);
+            const [asHours, asMinutes] = afternoonStart.split(':').map(Number);
+            const [aeHours, aeMinutes] = afternoonEnd.split(':').map(Number);
+
+            return (
+                (currentMinutes >= (msHours * 60 + msMinutes) && currentMinutes < (meHours * 60 + meMinutes)) ||
+                (currentMinutes >= (asHours * 60 + asMinutes) && currentMinutes < (aeHours * 60 + aeMinutes))
+            );
+        }
+
+        // Atualizar exibição de uma tarefa
+        function updateTaskDisplay(taskId) {
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (taskElement) {
+                const task = activeTasks.find(t => t.id === taskId);
+                const elapsedElement = taskElement.querySelector('.task-time');
+                if (elapsedElement) {
+                    const minutes = Math.floor(task.elapsedMinutes);
+                    const seconds = Math.floor((task.elapsedMinutes % 1) * 60);
+                    elapsedElement.textContent = minutes > 0 ?
+                        `${minutes} min ${seconds} s` :
+                        `${seconds} s`;
+                }
+            }
+        }
+
+        function updateTaskTime() {
+            if (!currentTaskStartTime) return;
+
+            const now = new Date();
+            const diffMinutes = Math.round((now - currentTaskStartTime) / 60000);
+
+            diffMinutesEl.textContent = diffMinutes;
+            diffPluralEl.textContent = diffMinutes !== 1 ? 's' : '';
+
+            if (diffMinutes < 15) {
+                diffStatusEl.textContent = '(Atenção: Pouco tempo)';
+                timeDiffEl.classList.remove('text-green-600', 'dark:text-green-400');
+                timeDiffEl.classList.add('text-yellow-600', 'dark:text-yellow-400');
+            } else if (diffMinutes > 90) {
+                diffStatusEl.textContent = '(Cuidado: Muito tempo)';
+                timeDiffEl.classList.remove('text-green-600', 'dark:text-green-400');
+                timeDiffEl.classList.add('text-amber-600', 'dark:text-amber-400');
+            } else {
+                diffStatusEl.textContent = '(OK)';
+                timeDiffEl.classList.remove('text-yellow-600', 'dark:text-yellow-400', 'text-amber-600', 'dark:text-amber-400');
+                timeDiffEl.classList.add('text-green-600', 'dark:text-green-400');
+            }
+
+            timeDiffEl.classList.remove('hidden');
+        }
+
+        function showNotification(message) {
+            const toastContainer = document.getElementById('toast-container');
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-blue-500 text-white px-4 py-2 rounded shadow transition-opacity opacity-0';
+            toast.textContent = message;
+
+            toastContainer.appendChild(toast);
+
+            // Fade in
+            setTimeout(() => {
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+            }, 100);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, 3000);
+        }
+
+        // Inicializa o app
+        // Salvar tarefa
+        function saveTask() {
+            const taskName = taskNameInput.value.trim();
+            if (!taskName) return;
+
+            const endTime = new Date();
+            const duration = Math.round((endTime - currentTaskStartTime) / 60000);
+
+            tasks.push({
+                name: taskName,
+                date: endTime.toISOString(),
+                duration: duration
+            });
+
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+
+            taskNameInput.value = '';
+            currentTaskStartTime = null;
+            startTaskBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Iniciar Demanda';
+            timeDiffEl.classList.add('hidden');
+
+            if (timeInterval) {
+                clearInterval(timeInterval);
+                timeInterval = null;
+            }
+        }
+
+        // Renderizar lista de tarefas
+        function renderTasks() {
+            const activeTasksList = document.getElementById('active-tasks-list');
+            const completedTasksList = document.getElementById('completed-tasks-list');
+
+            activeTasksList.innerHTML = '';
+            completedTasksList.innerHTML = '';
+
+            // Tarefas ativas
+            activeTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'bg-white dark:bg-slate-700 rounded-lg p-4 shadow task-item';
+                li.dataset.taskId = task.id;
+
+                li.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium text-slate-600 dark:text-slate-400">${task.name}</span>
+                        <span class="task-time font-bold">
+                            ${Math.floor((new Date() - new Date(task.startTime)) / 60000) + task.manualAdjustment} min
+                        </span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="adjustTaskTime('${task.id}', -1)" class="px-2 py-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 rounded text-sm text-slate-700 dark:text-slate-300">
+                            -1 min
+                        </button>
+                        <button onclick="adjustTaskTime('${task.id}', 1)" class="px-2 py-1 bg-slate-100 dark:bg-slate-600 rounded text-sm">
+                            +1 min
+                        </button>
+                        <button onclick="completeTask('${task.id}')" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">
+                            Concluir
+                        </button>
+                    </div>
+                `;
+
+                activeTasksList.appendChild(li);
+            });
+
+            // Tarefas completadas
+            completedTasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'bg-slate-100 dark:bg-slate-800 rounded-md p-3 flex justify-between items-center task-item';
+
+                const taskDate = new Date(task.completedAt);
+                const timeString = taskDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateString = taskDate.toLocaleDateString();
+
+                li.innerHTML = `
+                    <div>
+                        <span class="font-medium text-slate-700 dark:text-slate-200">${task.name}</span>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                            ${dateString} ${timeString} - ${task.duration} min
+                        </div>
+                    </div>
+                    <button onclick="deleteCompletedTask(${index})" class="text-red-500 hover:text-red-700 dark:hover:text-red-400">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+
+                completedTasksList.appendChild(li);
+            });
+        }
+
+        // Ajustar tempo manualmente
+        function adjustTaskTime(taskId, minutes) {
+            const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+            if (taskIndex >= 0) {
+                activeTasks[taskIndex].manualAdjustment += minutes;
+                activeTasks[taskIndex].elapsedMinutes += minutes;
+
+                localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+                updateTaskDisplay(taskId);
+            }
+        }
+
+        // Concluir tarefa
+        function completeTask(taskId) {
+            const taskIndex = activeTasks.findIndex(t => t.id === taskId);
+            if (taskIndex >= 0) {
+                const task = activeTasks[taskIndex];
+
+                // Remove da lista de ativas
+                activeTasks.splice(taskIndex, 1);
+                localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+
+                // Para o timer
+                if (timeIntervals[taskId]) {
+                    cancelAnimationFrame(timeIntervals[taskId]);
+                    delete timeIntervals[taskId];
+                }
+
+                // Adiciona à lista de completadas
+                completedTasks.unshift({
+                    name: task.name,
+                    duration: task.elapsedMinutes,
+                    completedAt: new Date().toISOString()
+                });
+
+                localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+                renderTasks();
+            }
+        }
+
+        // Deletar tarefa completada
+        window.deleteCompletedTask = function (index) {
+            completedTasks.splice(index, 1);
+            localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+            renderTasks();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+</body>
+
+</html>
