@@ -176,19 +176,27 @@
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div>
                             <label>Início Manhã</label>
-                            <input type="time" id="calc-morning-start" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                            <input type="time" id="calc-morning-start"
+                                class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700"
+                                onchange="calcularFechamento()">
                         </div>
                         <div>
                             <label>Fim Manhã</label>
-                            <input type="time" id="calc-morning-end" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                            <input type="time" id="calc-morning-end"
+                                class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700"
+                                onchange="calcularFechamento()">
                         </div>
                         <div>
                             <label>Início Tarde</label>
-                            <input type="time" id="calc-afternoon-start" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                            <input type="time" id="calc-afternoon-start"
+                                class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700"
+                                onchange="calcularFechamento()">
                         </div>
                         <div>
                             <label>Fim Tarde</label>
-                            <input type="time" id="calc-afternoon-end" class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700" onchange="calcularFechamento()">
+                            <input type="time" id="calc-afternoon-end"
+                                class="time-input w-full px-2 py-1 border rounded text-center dark:bg-slate-700"
+                                onchange="calcularFechamento()">
                         </div>
                     </div>
                     <div id="fechamento-alert" class="text-sm font-medium mt-2"></div>
@@ -225,6 +233,7 @@
         // Inicialização
         function init() {
             renderTasks();
+            carregarCamposCalculadora();
             updateTheme();
 
             const savedWorkHours = JSON.parse(localStorage.getItem('workHours'));
@@ -645,7 +654,7 @@
                     <div class="flex space-x-2">
                         <div class="flex space-x-2 items-center">
                             <input type="number" min="0" class="w-20 px-2 py-1 border rounded text-center text-slate-700 dark:text-slate-300 dark:bg-slate-700" 
-                                value="${task.elapsedMinutes}" 
+                                value="${Math.floor(task.elapsedMinutes)}" 
                                 onchange="setTaskTime('${task.id}', this.value)">
                             <button onclick="completeTask('${task.id}')" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">
                                 Concluir
@@ -794,6 +803,15 @@
                 alerta.className = 'text-red-600 dark:text-red-400 mt-2';
                 alerta.textContent += ' — ⚠️ Faltam horas a declarar!';
             }
+
+            // Salva os valores digitados no localStorage
+            localStorage.setItem('calc-horas', JSON.stringify({
+                ms: morningStart,
+                me: morningEnd,
+                as: afternoonStart,
+                ae: afternoonEnd
+            }));
+
         }
     </script>
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
