@@ -763,10 +763,10 @@
         document.addEventListener('DOMContentLoaded', init);
 
         function calcularFechamento() {
-            const morningStart = document.getElementById('calc-morning-start').value;
-            const morningEnd = document.getElementById('calc-morning-end').value;
-            const afternoonStart = document.getElementById('calc-afternoon-start').value;
-            const afternoonEnd = document.getElementById('calc-afternoon-end').value;
+            const morningStart = document.getElementById('calc-morning-start').value || '07:42';
+            const morningEnd = document.getElementById('calc-morning-end').value || '12:00';
+            const afternoonStart = document.getElementById('calc-afternoon-start').value || '13:30';
+            const afternoonEnd = document.getElementById('calc-afternoon-end').value || '18:00';
 
             const [msHours, msMinutes] = morningStart.split(':').map(Number);
             const [meHours, meMinutes] = morningEnd.split(':').map(Number);
