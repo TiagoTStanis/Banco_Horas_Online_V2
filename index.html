@@ -348,7 +348,7 @@
             const balanceAlert = document.getElementById('task-balance-alert');
 
             if (totalTaskMinutes > minutosHoje) {
-                balanceAlert.textContent = `⚠️ As tarefas registradas somam ${totalTaskMinutes} min, que excedem os ${minutosHoje} min trabalhados hoje.`;
+                balanceAlert.textContent = `⚠️ As tarefas registradas somam ${totalTaskMinutes.toFixed(0)} min, que excedem os ${minutosHoje} min trabalhados hoje.`;
                 balanceAlert.className = "text-yellow-600 dark:text-yellow-400";
             } else if (totalTaskMinutes < minutosHoje) {
                 balanceAlert.textContent = `🔎 As tarefas somam ${totalTaskMinutes.toFixed(0)} min de ${minutosHoje} min trabalhados.`;
