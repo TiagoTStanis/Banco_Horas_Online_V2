@@ -232,9 +232,9 @@
 
         // Inicialização
         function init() {
+            carregarCamposCalculadora();
             renderTasks();
             calcularFechamento();
-            carregarCamposCalculadora();
             updateTheme();
 
             const savedWorkHours = JSON.parse(localStorage.getItem('workHours'));
@@ -791,6 +791,19 @@
 
             // Soma das tarefas do dia
             const hoje = new Date().toISOString().split('T')[0];
+
+            activeTasks.forEach(task => {
+                const now = Date.now();
+                if (task.lastUpdateTime) {
+                    const diffMinutes = (now - task.lastUpdateTime) / 60000;
+                    task.elapsedMinutes += diffMinutes;
+                    task.lastUpdateTime = now;
+                }
+            });
+
+            // Salva atualização no localStorage
+            localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+
             const totalAtivas = activeTasks.reduce((sum, task) => sum + task.elapsedMinutes, 0);
             const totalConcluidasHoje = completedTasks.reduce((sum, task) => {
                 const dataTarefa = task.completedAt.split('T')[0];
