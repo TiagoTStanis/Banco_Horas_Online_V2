@@ -298,7 +298,16 @@
         }
 
         function atualizarTaskBalance(minutosHoje) {
-            const totalTaskMinutes = activeTasks.reduce((sum, task) => sum + task.elapsedMinutes, 0);
+            const hoje = new Date().toISOString().split('T')[0];
+
+            const totalAtivas = activeTasks.reduce((sum, task) => sum + task.elapsedMinutes, 0);
+
+            const totalConcluidasHoje = completedTasks.reduce((sum, task) => {
+                const dataTarefa = task.completedAt.split('T')[0];
+                return dataTarefa === hoje ? sum + task.duration : sum;
+            }, 0);
+
+            const totalTaskMinutes = totalAtivas + totalConcluidasHoje;
             const balanceAlert = document.getElementById('task-balance-alert');
 
             if (totalTaskMinutes > minutosHoje) {
@@ -312,7 +321,6 @@
                 balanceAlert.className = "text-green-600 dark:text-green-400";
             }
         }
-
 
         // Capacidade total do dia
         function capacidadeDia() {
@@ -617,6 +625,7 @@
 
                 completedTasksList.appendChild(li);
             });
+            atualizarTaskBalance(calcularMinutosTrabalhadosHoje());
         }
 
         // Ajustar tempo manualmente
